@@ -44,5 +44,4 @@ async Task Generate_Log_TopicExchange()
 		Console.WriteLine("press enter to exist");
 		Console.ReadLine();
 	}
-	;
 }
