@@ -10,13 +10,6 @@ async Task Publish()
     {
         using (var channel = await connection.CreateChannelAsync())
         {
-            channel.BasicNacksAsync += async (sender, ea) =>
-             {
-                 Console.WriteLine($"Message with delivery tag {ea.DeliveryTag} has been acknowledged.");
-                 await Task.CompletedTask;
-
-             };
-
 
             channel.BasicReturnAsync += async (sender, ea) =>
             {
