@@ -15,4 +15,5 @@
 // await VirtualHostUserDemo.Generate_message_wothVirtualHost_user_specific();
 
 
-await TopicPermissionDemo.Generate_Log__message_topic_permission();
+//await TopicPermissionDemo.Generate_Log__message_topic_permission();
+await MessageTracingUseCaseService.WriteMessage();

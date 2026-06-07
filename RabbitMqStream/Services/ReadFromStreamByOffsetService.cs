@@ -13,7 +13,6 @@ namespace RabbitMqStream.Services
 
 			var config = new StreamSystemConfig()
 			{
-				VirtualHost = "dev",
 				Endpoints = new List<EndPoint> { new IPEndPoint(IPAddress.Loopback, 5552) }, // rabbit ,q stream port
 				UserName = "maysara",
 				Password = "maysara"
