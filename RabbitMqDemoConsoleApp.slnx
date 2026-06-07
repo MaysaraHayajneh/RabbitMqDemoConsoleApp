@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="RabbimqConsumer/RabbimqConsumer.csproj" />
   <Project Path="RabbitMqDemoConsoleApp/RabbitMqDemoConsoleApp.csproj" />
+  <Project Path="RabbitMqStream/RabbitMqStream.csproj" Id="8c4f9160-bdba-423e-8237-d7ed94b8ef7c" />
   <Project Path="ReliableExchangeRabbitMq/ReliableExchangeRabbitMq.csproj" Id="3385cdbe-211c-478f-a0af-8b7e01927e7d" />
 </Solution>
