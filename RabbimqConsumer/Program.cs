@@ -1,8 +1,7 @@
 ﻿using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System.Runtime.CompilerServices;
 using System.Text;
-await ConumeMessages_dead_letter_exchange_routing();
+await ConumeMessages_consumer_priorities();
 async Task ConumeMessages()
 {
 	var factory = new ConnectionFactory() { HostName = "localhost" };
@@ -20,40 +19,40 @@ async Task ConumeMessages()
 
 				await channel.BasicAckAsync(  // acknowledgment is a mechanism used in message queuing systems to confirm that a message has been successfully received and processed by a consumer
 											  // . It helps ensure reliable message delivery and allow // s the message broker to manage the lifecycle of messages effectively (deleted/deleting it).
-                    deliveryTag: ea.DeliveryTag,
+					deliveryTag: ea.DeliveryTag,
 					multiple: false
 					);
-				
+
 
 
 				await channel.BasicNackAsync(   // This means i do negative acknowledgment to the message ,  determine if requeue or not  //
-                                                // this will activate the deae-letter exchange freature if teh requeue is false and the message will be sent to the dead-letter exchange if it is configured, otherwise it will be discarded.
+												// this will activate the deae-letter exchange freature if teh requeue is false and the message will be sent to the dead-letter exchange if it is configured, otherwise it will be discarded.
 
-                    deliveryTag: ea.DeliveryTag,
+					deliveryTag: ea.DeliveryTag,
 					multiple: false,
 					requeue: false
-                    );
+					);
 			};
 
 			await channel.BasicConsumeAsync(
 				queue: "loginfo",
 				autoAck: false, // has three types of acknowledgment: autoAck, manualAck, and NAck (negative acknowledgment)
-                consumer: consumer,
+				consumer: consumer,
 				consumerTag: "info"
 				);
 			await channel.BasicConsumeAsync(
 				queue: "logerror",
 				autoAck: false, // has three types of acknowledgment: autoAck, manualAck, and NAck (negative acknowledgment)
-                consumer: consumer,
+				consumer: consumer,
 				consumerTag: "error"
 				);
 			await channel.BasicConsumeAsync(
 				queue: "logall",
 				autoAck: false, // has three types of acknowledgment: autoAck, manualAck, and NAck (negative acknowledgment)
-                consumer: consumer,
+				consumer: consumer,
 				consumerTag: "all"
 				);
-			 
+
 
 			Console.WriteLine("press enter to exit");
 			Console.ReadKey();
@@ -194,3 +193,107 @@ async Task ConumeMessages_dead_letter_exchange_routing()
 	await channel.CloseAsync();
 	await connection.CloseAsync();
 }
+
+
+async Task ConumeMessages_consumer_priorities()
+{
+	var factory = new ConnectionFactory() { HostName = "localhost" };
+
+	var connection = await factory.CreateConnectionAsync();
+
+	var channel = await connection.CreateChannelAsync();
+
+	await channel.BasicQosAsync(0, 3, false);// teliing the raabit mq to send at max two unacked messages // the consumer shoud acked so he can recive further
+											 // messages
+	for (int i = 0; i < 3; i++)
+	{
+		var consumer = new AsyncEventingBasicConsumer(channel);
+
+		consumer.ReceivedAsync += async (model, ea) =>
+		{
+			var message = Encoding.UTF8.GetString(ea.Body.ToArray());
+
+			Console.WriteLine($"{message} received");
+
+			//await channel.BasicAckAsync(
+			//	deliveryTag: ea.DeliveryTag,
+			//	false
+			//);
+
+			Console.WriteLine($"{message} has been processed by consumer {ea.ConsumerTag}");
+		};
+
+		Dictionary<string, object> args = new Dictionary<string, object>();
+
+		if (i == 0)
+		{
+			args.Add("x-priority", 10);
+		}
+		else if (i == 1)
+		{
+			args.Add("x-priority", 1);
+
+		}
+		await channel.BasicConsumeAsync(
+			queue: "q1",
+			autoAck: false,
+			consumer: consumer,
+			consumerTag: $"consumer{i}",
+			arguments: args
+		);
+	}
+
+
+	Console.WriteLine("Consumer running... press ENTER to exit");
+	Console.ReadLine();
+
+	await channel.CloseAsync();
+	await connection.CloseAsync();
+}
+
+
+
+async Task ConumeMessages_consumer_prefetch()
+{
+	var factory = new ConnectionFactory() { HostName = "localhost" };
+
+	var connection = await factory.CreateConnectionAsync();
+
+	var channel = await connection.CreateChannelAsync();
+
+	await channel.BasicQosAsync(0, 2, false);// teliing the raabit mq to send at max two unacked messages // the consumer shoud acked so he can recive further
+											 // messages
+	for (int i = 0; i < 3; i++)
+	{
+
+		var consumer = new AsyncEventingBasicConsumer(channel);
+
+		consumer.ReceivedAsync += async (model, ea) =>
+		{
+			var message = Encoding.UTF8.GetString(ea.Body.ToArray());
+
+			Console.WriteLine($"{message} received");
+
+			//await channel.BasicRejectAsync(
+			//	deliveryTag: ea.DeliveryTag,
+			//	requeue: false
+			//);
+
+			Console.WriteLine($"{message} rejected → DLX");
+		};
+
+		await channel.BasicConsumeAsync(
+			queue: "message--qudeadeue",
+			autoAck: false,
+			consumer: consumer
+		);
+	}
+
+
+	Console.WriteLine("Consumer running... press ENTER to exit");
+	Console.ReadLine();
+
+	await channel.CloseAsync();
+	await connection.CloseAsync();
+}
+
